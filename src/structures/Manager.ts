@@ -344,7 +344,7 @@ export class Manager extends EventEmitter {
       const _source = Manager.DEFAULT_SOURCES[_query.source ?? this.options.defaultSearchPlatform] ?? _query.source;
 
       let search = _query.query;
-      if (!/^https?:\/\//.test(search)) {
+      if (_source !== "local" && /^https?:\/\//.test(search)) {
         search = `${_source}:${search}`;
       }
 
@@ -420,11 +420,14 @@ export class Manager extends EventEmitter {
    * @param options
    */
   public create(options: PlayerOptions): Player {
-    if (this.players.has(options.guild)) {
-      return this.players.get(options.guild);
-    }
 
-    return new (Structure.get("Player"))(options);
+    if (this.players.has(options.guild)) {
+      if(this.players.get(options.guild).manager.options.clientId !== this.options.clientId) {
+         Object.assign({ manager: this, clientId: this.options.clientId }, options);
+         return new (Structure.get("Player"))(options);
+      }
+
+    return this.players.get(options.guild);
   }
 
   /**
@@ -547,7 +550,7 @@ export interface ManagerOptions {
   send(id: string, payload: Payload): void;
 }
 
-export type SearchPlatform = "youtube" | "youtube music" | "soundcloud";
+export type SearchPlatform = "youtube" | "youtube music" | "soundcloud" | "local";
 
 export interface SearchQuery {
   /** The source to search from. */
